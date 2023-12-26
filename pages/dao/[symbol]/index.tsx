@@ -31,6 +31,7 @@ import { NftVoterClient } from '@utils/uiTypes/NftVoterClient'
 import { notify } from '@utils/notifications'
 import { sendSignedTransaction } from '@utils/send'
 import { compareProposals, filterProposals } from '@utils/proposals'
+import { getUnrelinquishedVoteRecords } from '@models/api'
 import ProposalSorting, {
   InitialSorting,
   PROPOSAL_SORTING_LOCAL_STORAGE_KEY,
@@ -92,6 +93,9 @@ const REALM = () => {
   const [proposalSearch, setProposalSearch] = useState('')
   const [activeTab, setActiveTab] = useState('Proposals')
   const [multiVoteMode, setMultiVoteMode] = useState(false)
+  const [unrelinquishedVotesFilter, setUnrelinquishedVotesFilter] = useState(
+    false
+  )
   const [selectedProposals, setSelectedProposals] = useState<
     SelectedProposal[]
   >([])
@@ -101,6 +105,35 @@ const REALM = () => {
   )
   const wallet = useWalletOnePointOh()
   const { connection } = useConnection()
+
+  const [unrelinquishedVotes, setUnrelinquishedVotes] = useState<{
+    [proposalPubkey: string]: true
+  }>({})
+
+  useEffect(() => {
+    if (!realmInfo || !ownTokenRecord) {
+      setUnrelinquishedVotes({})
+      return
+    }
+
+    ;(async () => {
+      const unrelinquishedVotesRecords = await getUnrelinquishedVoteRecords(
+        connection,
+        realmInfo!.programId,
+        ownTokenRecord.account.governingTokenOwner
+      )
+
+      setUnrelinquishedVotes(
+        unrelinquishedVotesRecords.reduce(
+          (acc, cur) => ({
+            ...acc,
+            [cur.account.proposal.toBase58()]: true,
+          }),
+          {}
+        )
+      )
+    })()
+  }, [!!ownTokenRecord, !!realmInfo])
 
   const governancesArray = useRealmGovernancesQuery().data
   const governancesByGovernance = useMemo(
@@ -185,8 +218,17 @@ const REALM = () => {
           .includes(proposalSearch.toLocaleLowerCase())
       )
     }
+
+    // Filter for unrelinquished votes
+    if (unrelinquishedVotesFilter && wallet?.connected) {
+      proposals = proposals.filter(
+        ([, v]) => unrelinquishedVotes[v.pubkey.toBase58()]
+      )
+    }
+
     return proposals
   }, [
+    ownTokenRecord?.pubkey.toBase58(),
     allProposals,
     councilMint,
     filters,
@@ -197,6 +239,7 @@ const REALM = () => {
     realmQuery.data?.result,
     sorting,
     votingProposals,
+    unrelinquishedVotesFilter,
   ])
 
   const paginateProposals = useCallback(
@@ -481,6 +524,23 @@ const REALM = () => {
                           className={`flex items-center lg:justify-end lg:pb-0 lg:space-x-3 w-full justify-between pb-3`}
                         >
                           <div className="flex items-center">
+                            {wallet?.connected ? (
+                              <>
+                                <p className="mb-0 mr-1 text-fgd-3 text-xs w-[11em]">
+                                  Show proposals with unrelinquished vote
+                                </p>
+                                <Switch
+                                  checked={unrelinquishedVotesFilter}
+                                  onChange={() => {
+                                    setUnrelinquishedVotesFilter(
+                                      !unrelinquishedVotesFilter
+                                    )
+                                  }}
+                                />
+                              </>
+                            ) : null}
+                          </div>
+                          <div className="flex items-center">
                             <p className="mb-0 mr-1 text-fgd-3">Batch voting</p>
                             <Switch
                               checked={multiVoteMode}
@@ -510,6 +570,9 @@ const REALM = () => {
                                 key={k}
                                 proposalPk={new PublicKey(k)}
                                 proposal={v.account}
+                                unrelinquishedVote={
+                                  unrelinquishedVotes[v.pubkey.toBase58()]
+                                }
                               />
                             )
                           )}

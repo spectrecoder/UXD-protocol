@@ -1,4 +1,8 @@
-import { GovernanceAccountType, ProposalState, VoteType } from '@solana/spl-governance'
+import {
+  GovernanceAccountType,
+  ProposalState,
+  VoteType,
+} from '@solana/spl-governance'
 import { BanIcon } from '@heroicons/react/solid'
 
 import Tooltip from '@components/Tooltip'
@@ -10,6 +14,7 @@ import { useIsVoting } from './hooks'
 import useWalletOnePointOh from '@hooks/useWalletOnePointOh'
 import { useRouteProposalQuery } from '@hooks/queries/proposal'
 import { useProposalVoteRecordQuery } from '@hooks/queries/voteRecord'
+import DelegateBalanceCard from '@components/TokenBalance/DelegateTokenBalanceCard'
 
 const VotePanel = () => {
   const proposal = useRouteProposalQuery().data?.result
@@ -29,8 +34,9 @@ const VotePanel = () => {
     proposal.account.state !== ProposalState.Draft &&
     !isVoteCast
 
-  const isMulti = proposal?.account.voteType !== VoteType.SINGLE_CHOICE
-    && proposal?.account.accountType === GovernanceAccountType.ProposalV2
+  const isMulti =
+    proposal?.account.voteType !== VoteType.SINGLE_CHOICE &&
+    proposal?.account.accountType === GovernanceAccountType.ProposalV2
 
   return (
     <>
@@ -55,6 +61,14 @@ const VotePanel = () => {
       )}
       <YouVoted quorum="veto" />
       {!isMulti && <VetoButtons />}
+
+      {connected ? (
+        <div className="bg-bkg-2 p-4 md:p-6 rounded-lg space-y-4">
+          <div className="flex flex-col p-4">
+            <DelegateBalanceCard />
+          </div>
+        </div>
+      ) : null}
       {/* END */}
     </>
   )

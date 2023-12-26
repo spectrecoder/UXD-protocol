@@ -28,6 +28,7 @@ import { ExclamationIcon } from '@heroicons/react/outline'
 import { useEffect } from 'react'
 import useVotePluginsClientStore from 'stores/useVotePluginsClientStore'
 import { VSR_PLUGIN_PKS } from '@constants/plugins'
+
 import { useMaxVoteRecord } from '@hooks/useMaxVoteRecord'
 import useWalletOnePointOh from '@hooks/useWalletOnePointOh'
 import {

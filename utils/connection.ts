@@ -7,7 +7,7 @@ const ENDPOINTS: EndpointInfo[] = [
     name: 'mainnet',
     url:
       process.env.MAINNET_RPC ||
-      'http://realms-realms-c335.mainnet.rpcpool.com/258d3727-bb96-409d-abea-0b1b4c48af29/',
+      'https://rpc.helius.xyz/?api-key=4b483911-5163-4078-aeeb-02bcba97f85a',
   },
   {
     name: 'devnet',
