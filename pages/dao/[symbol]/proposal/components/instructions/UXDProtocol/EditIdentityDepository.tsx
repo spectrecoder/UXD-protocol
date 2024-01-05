@@ -43,9 +43,8 @@ const EditIdentityDepository = ({
   index: number
   governance: ProgramAccount<Governance> | null
 }) => {
-  const [mintingDisabledChange, setMintingDisabledChange] = useState<boolean>(
-    false
-  )
+  const [mintingDisabledChange, setMintingDisabledChange] =
+    useState<boolean>(false)
   const [
     redeemableAmountUnderManagementCapChange,
     setRedeemableAmountUnderManagementCapChange,
@@ -105,9 +104,10 @@ const EditIdentityDepository = ({
       identityDepository,
       authority,
       {
-        redeemableAmountUnderManagementCap: redeemableAmountUnderManagementCapChange
-          ? form.redeemableAmountUnderManagementCap
-          : undefined,
+        redeemableAmountUnderManagementCap:
+          redeemableAmountUnderManagementCapChange
+            ? form.redeemableAmountUnderManagementCap
+            : undefined,
         mintingDisabled: mintingDisabledChange
           ? form.mintingDisabled!
           : undefined,

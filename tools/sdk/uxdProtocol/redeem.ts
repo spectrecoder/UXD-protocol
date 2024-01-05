@@ -1,15 +1,10 @@
 import { PublicKey, TransactionInstruction } from '@solana/web3.js'
-import {
-  UXD_DECIMALS,
-  Controller,
-  UXDClient,
-  MercurialVaultDepository,
-} from '@uxd-protocol/uxd-client'
+import { UXD_DECIMALS, Controller, UXDClient } from '@uxd-protocol/uxd-client'
 import { ConnectionContext } from '@utils/connection'
 import {
   DEPOSITORY_TYPES,
   getCredixLpDepository,
-  getDepositoryMintInfo,
+  getMercurialVaultDepository,
   uxdClient,
 } from './uxdClient'
 
@@ -21,7 +16,7 @@ export type UXDRedeemParams = {
   user: PublicKey
 }
 
-const redeemWithMercurialIx = async ({
+const redeemFromMercurialVaultDepositoryIx = async ({
   connection,
   uxdProgramId,
   client,
@@ -34,21 +29,11 @@ const redeemWithMercurialIx = async ({
   controller: Controller
   params: UXDRedeemParams
 }) => {
-  const {
-    address: collateralMint,
-    decimals: collateralDecimals,
-  } = getDepositoryMintInfo(connection.cluster, params.collateralName)
-
-  const depository = await MercurialVaultDepository.initialize({
-    connection: connection.current,
-    collateralMint: {
-      mint: collateralMint,
-      name: params.collateralName,
-      decimals: collateralDecimals,
-      symbol: params.collateralName,
-    },
+  const depository = await getMercurialVaultDepository(
+    connection,
     uxdProgramId,
-  })
+    params.collateralName
+  )
 
   return client.createRedeemFromMercurialVaultDepositoryInstruction(
     controller,
@@ -61,7 +46,7 @@ const redeemWithMercurialIx = async ({
   )
 }
 
-const redeemWithCredixIx = async ({
+const redeemFromCredixLpDepositoryIx = async ({
   connection,
   uxdProgramId,
   client,
@@ -100,22 +85,23 @@ export const redeemUXDIx = async (
   const controller = new Controller('UXD', UXD_DECIMALS, uxdProgramId)
 
   switch (depositoryType) {
-    case DEPOSITORY_TYPES.MERCURIAL:
-      return redeemWithMercurialIx({
+    case DEPOSITORY_TYPES.MERCURIAL_VAULT:
+      return redeemFromMercurialVaultDepositoryIx({
         connection,
         uxdProgramId,
         client,
         controller,
         params,
       })
-    case DEPOSITORY_TYPES.CREDIX:
+    case DEPOSITORY_TYPES.CREDIX_LP:
+      return redeemFromCredixLpDepositoryIx({
+        connection,
+        uxdProgramId,
+        client,
+        controller,
+        params,
+      })
     default:
-      return redeemWithCredixIx({
-        connection,
-        uxdProgramId,
-        client,
-        controller,
-        params,
-      })
+      throw new Error('Redeem depository type unknown: ' + depositoryType)
   }
 }
